@@ -31,7 +31,7 @@
 
       <q-card-actions align="right" class="text-primary">
         <q-btn flat label="Sign Up" @click="signUp = true" />
-        <q-btn flat label="Login" @click="login" />
+        <q-btn flat label="Login" @click="tryLogin" />
       </q-card-actions>
     </q-card>
     <!-- END OF LOGIN -->
@@ -62,6 +62,7 @@
 import { ref } from 'vue';
 import CockatriceAvatar from 'components/CockatriceAvatar.vue';
 import { useRouter } from 'vue-router';
+import {login} from '../websocket/commands/session/login'
 
 const router = useRouter();
 
@@ -76,8 +77,17 @@ const serverOptions = ref([
   { label: 'Chickatrice', port: '1234' },
 ]);
 const serverDropdown = ref('');
-async function login() {
-  await router.push({ name: 'home' });
-  loginDialog.value = false;
+async function tryLogin() {
+  const options = {
+    userName: "Pingweeny",
+    password: "Umeriscute123!"
+  }
+  try {
+    login(options);
+  } catch (err) {
+    console.log(err)
+  }
+  
+
 }
 </script>

@@ -42,6 +42,7 @@ export function login(options: WebSocketConnectOptions, passwordSalt?: string): 
       // listUsers();
       // listRooms();
 
+      
       updateStatus(StatusEnum.LOGGED_IN, 'Logged in.');
 
       return;

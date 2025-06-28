@@ -85,7 +85,7 @@ async function tryLogin() {
   try {
     login(options);
   } catch (err) {
-    console.log(err)
+    console.log("THE ERROR WE GOT FROM login.ts: ", err)
   }
   
 

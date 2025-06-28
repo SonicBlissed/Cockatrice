@@ -11,7 +11,8 @@ export interface ProtobufEvents {
 }
 
 export class ProtobufService {
-  static PB_FILE_DIR = `${process.env.PUBLIC_URL}/pb`;
+  //this was originally a env called PUBLIC_URL/pb
+  static PB_FILE_DIR = `../../../public/pb`;
 
   public controller: any;
   private cmdId = 0;
@@ -128,6 +129,7 @@ export class ProtobufService {
   }
 
   public sendSessionCommand(sesCmd: number, callback?: Function) {
+    console.log('trying to send session command!')
     const cmd = this.controller.CommandContainer.create({
       sessionCommand: [sesCmd],
     });

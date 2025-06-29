@@ -1,4 +1,5 @@
-import { StatusEnum, WebSocketConnectOptions } from '../../../types';
+import { SessionCommands } from '..';
+import { StatusEnum, WebSocketConnectOptions, WebSocketConnectReason } from '../../../types';
 import webClient from '../../WebClient';
 import { hashPassword } from '../../utils/passwordHasher';
 // import { SessionPersistence } from '../../persistence/SessionPersistence';
@@ -11,6 +12,7 @@ import {
 export function login(options: WebSocketConnectOptions, passwordSalt?: string): void {
   const { userName, password, hashedPassword } = options;
 
+  SessionCommands.connect(options, WebSocketConnectReason.LOGIN);
   console.log('TRYING TO LOGIN NOW', userName, password);
 
   const loginConfig: any = {
@@ -26,9 +28,11 @@ export function login(options: WebSocketConnectOptions, passwordSalt?: string): 
   }
 
   const command = webClient.protobuf.controller.Command_Login.create(loginConfig);
+  //the command to send to protobuf, which will then be sent to the server
   const sc = webClient.protobuf.controller.SessionCommand.create({ '.Command_Login.ext': command });
 
   webClient.protobuf.sendSessionCommand(sc, (raw: any) => {
+    console.log("LOGIN RESPONSE", raw);
     const resp = raw['.Response_Login.ext'];
 
     if (raw.responseCode === webClient.protobuf.controller.Response.ResponseCode.RespOk) {
@@ -42,7 +46,6 @@ export function login(options: WebSocketConnectOptions, passwordSalt?: string): 
       // listUsers();
       // listRooms();
 
-      
       updateStatus(StatusEnum.LOGGED_IN, 'Logged in.');
 
       return;

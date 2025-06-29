@@ -12,7 +12,7 @@ export interface ProtobufEvents {
 
 export class ProtobufService {
   //this was originally a env called PUBLIC_URL/pb
-  static PB_FILE_DIR = `../../../public/pb`;
+  static PB_FILE_DIR = `/pb`;
 
   public controller: any;
   private cmdId = 0;
@@ -126,6 +126,8 @@ export class ProtobufService {
     if (this.webClient.socket.checkReadyState(WebSocket.OPEN)) {
       this.webClient.socket.send(this.controller.CommandContainer.encode(cmd).finish());
     }
+
+    console.log("COMMAND BEING SENT", cmd)
   }
 
   public sendSessionCommand(sesCmd: number, callback?: Function) {

@@ -33,15 +33,15 @@ export class WebSocketService {
   public connect(options: WebSocketConnectOptions, protocol: string = 'wss'): void {
     //if this window is running locally, protocol should be ws
     if (window.location.hostname === 'localhost') {
-      protocol = 'ws';
+      protocol = 'wss';
     }
 
     // deconstruct options and get the host and port values
     const { host, port } = options;
     //set the ping interval to the one in clientOptions
     this.keepalive = this.webClient.clientOptions.keepalive;
-    //create the actual socket connection
-    this.socket = this.createWebSocket(`${protocol}://${host}:${port}`);
+    //create the actual socket connection, HARDCODED
+    this.socket = this.createWebSocket(`${protocol}://server.cockatrice.us:443/`);
   }
 
   public disconnect(): void {
@@ -84,9 +84,9 @@ export class WebSocketService {
       this.keepAliveService.endPingLoop();
     };
 
-    socket.onerror = () => {
+    socket.onerror = (err) => {
       //log that there was an error
-      console.log('Websocket error');
+      console.log('Websocket error', err);
     };
 
     socket.onmessage = (event: MessageEvent) => {

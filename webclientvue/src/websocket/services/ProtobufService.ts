@@ -5,6 +5,7 @@ import protobuf from 'protobufjs';
 import { WebClient } from '../WebClient';
 import { SessionCommands } from '../../websocket/commands/index';
 import ProtoFiles from '../../proto-files.json';
+import { SessionEvents } from '../events';
 
 export interface ProtobufEvents {
   [event: string]: Function;
@@ -32,7 +33,7 @@ export class ProtobufService {
   }
 
   public sendKeepAliveCommand(pingReceived: Function) {
-    console.log("SESSION PING GOES HERE");
+    console.log('SESSION PING GOES HERE');
     // SessionCommands.ping(pingReceived);
   }
 
@@ -49,9 +50,9 @@ export class ProtobufService {
           // case this.controller.ServerMessage.MessageType.ROOM_EVENT:
           //   this.processRoomEvent(msg.roomEvent, msg);
           //   break;
-          // case this.controller.ServerMessage.MessageType.SESSION_EVENT:
-          //   this.processSessionEvent(msg.sessionEvent, msg);
-          //   break;
+          case this.controller.ServerMessage.MessageType.SESSION_EVENT:
+            this.processSessionEvent(msg.sessionEvent, msg);
+            break;
           // case this.controller.ServerMessage.MessageType.GAME_EVENT_CONTAINER:
           //   this.processGameEvent(msg.gameEvent, msg);
           //   break;
@@ -74,6 +75,21 @@ export class ProtobufService {
     }
   }
 
+  private processEvent(response: any, events: ProtobufEvents, raw: any) {
+    for (const event in events) {
+      const payload = response[event];
+
+      if (!events[event]) {
+        return;
+      }
+
+      if (payload) {
+        events[event](payload, raw);
+        return;
+      }
+    }
+  }
+
   // private processCommonEvent(response: any, raw: any) {
   //   this.processEvent(response, CommonEvents, raw);
   // }
@@ -82,9 +98,9 @@ export class ProtobufService {
   //   this.processEvent(response, RoomEvents, raw);
   // }
 
-  // private processSessionEvent(response: any, raw: any) {
-  //   this.processEvent(response, SessionEvents, raw);
-  // }
+  private processSessionEvent(response: any, raw: any) {
+    this.processEvent(response, SessionEvents, raw);
+  }
 
   // private processGameEvent(response: any, raw: any): void {
   //   this.processEvent(response, GameEvents, raw);
@@ -126,12 +142,9 @@ export class ProtobufService {
     if (this.webClient.socket.checkReadyState(WebSocket.OPEN)) {
       this.webClient.socket.send(this.controller.CommandContainer.encode(cmd).finish());
     }
-
-    console.log("COMMAND BEING SENT", cmd)
   }
 
   public sendSessionCommand(sesCmd: number, callback?: Function) {
-    console.log('trying to send session command!')
     const cmd = this.controller.CommandContainer.create({
       sessionCommand: [sesCmd],
     });

@@ -77,7 +77,7 @@ const serverOptions = ref([
   { label: 'Chickatrice', port: '1234' },
 ]);
 const serverDropdown = ref('');
-async function tryLogin() {
+function tryLogin() {
   const options = {
     userName: "Pingweeny",
     password: "Umeriscute123!"

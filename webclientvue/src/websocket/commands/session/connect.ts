@@ -5,6 +5,7 @@ import { updateStatus } from './';
 export function connect(options: WebSocketConnectOptions, reason: WebSocketConnectReason): void {
   switch (reason) {
     case WebSocketConnectReason.LOGIN:
+      console.log('Connecting for login...');
     case WebSocketConnectReason.REGISTER:
     case WebSocketConnectReason.ACTIVATE_ACCOUNT:
     case WebSocketConnectReason.PASSWORD_RESET_REQUEST:

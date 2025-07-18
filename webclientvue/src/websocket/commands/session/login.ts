@@ -4,16 +4,12 @@ import webClient from '../../WebClient';
 import { hashPassword } from '../../utils/passwordHasher';
 // import { SessionPersistence } from '../../persistence/SessionPersistence';
 
-import {
-  disconnect,
-  updateStatus,
-} from './';
+import { disconnect, updateStatus } from './';
 
 export function login(options: WebSocketConnectOptions, passwordSalt?: string): void {
   const { userName, password, hashedPassword } = options;
-
+  // this just connects to the server with a provided reason
   SessionCommands.connect(options, WebSocketConnectReason.LOGIN);
-  console.log('TRYING TO LOGIN NOW', userName, password);
 
   const loginConfig: any = {
     ...webClient.clientConfig,
@@ -32,7 +28,6 @@ export function login(options: WebSocketConnectOptions, passwordSalt?: string): 
   const sc = webClient.protobuf.controller.SessionCommand.create({ '.Command_Login.ext': command });
 
   webClient.protobuf.sendSessionCommand(sc, (raw: any) => {
-    console.log("LOGIN RESPONSE", raw);
     const resp = raw['.Response_Login.ext'];
 
     if (raw.responseCode === webClient.protobuf.controller.Response.ResponseCode.RespOk) {
@@ -46,9 +41,15 @@ export function login(options: WebSocketConnectOptions, passwordSalt?: string): 
       // listUsers();
       // listRooms();
 
+      console.log('Login successful:', userInfo);
+
       updateStatus(StatusEnum.LOGGED_IN, 'Logged in.');
 
       return;
+    }
+
+    else{
+      console.error('Login failed:', raw.responseCode, resp);
     }
 
     switch (raw.responseCode) {

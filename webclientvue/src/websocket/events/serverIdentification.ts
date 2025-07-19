@@ -6,7 +6,7 @@ import {
   disconnect,
   login,
   // register,
-  // requestPasswordSalt,
+  requestPasswordSalt,
   // forgotPasswordChallenge,
   // forgotPasswordRequest,
   // forgotPasswordReset,
@@ -30,12 +30,13 @@ export function serverIdentification(info: ServerIdentificationData): void {
   switch (options.reason) {
     case WebSocketConnectReason.LOGIN:
       updateStatus(StatusEnum.LOGGING_IN, 'Logging In...');
-      login(options);
-      // if (getPasswordSalt) {
-      //   // requestPasswordSalt(options);
-      // } else {
-      //   login(options);
-      // }
+      // console.log('Server Identification:', info);
+      // login(options);
+      if (getPasswordSalt) {
+        requestPasswordSalt(options);
+      } else {
+        login(options);
+      }
       break;
     // case WebSocketConnectReason.REGISTER:
     //   const passwordSalt = getPasswordSalt ? generateSalt() : null;

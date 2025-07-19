@@ -11,6 +11,14 @@ export interface ProtobufEvents {
   [event: string]: Function;
 }
 
+/**
+ * Loads protobuf definitions from files listed in proto-files.json using protobufjs.
+Decodes incoming WebSocket messages using the loaded protobuf schema.
+Encodes and sends commands to the server using protobuf.
+Manages callbacks for responses to sent commands (pendingCommands).
+Processes different types of server messages (response, session event, etc.) and dispatches them to appropriate event handlers.
+ */
+
 export class ProtobufService {
   //this was originally a env called PUBLIC_URL/pb
   static PB_FILE_DIR = `/pb`;

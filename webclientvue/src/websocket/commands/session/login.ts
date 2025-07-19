@@ -8,8 +8,7 @@ import { disconnect, updateStatus } from './';
 
 export function login(options: WebSocketConnectOptions, passwordSalt?: string): void {
   const { userName, password, hashedPassword } = options;
-  // this just connects to the server with a provided reason
-  SessionCommands.connect(options, WebSocketConnectReason.LOGIN);
+ 
 
   const loginConfig: any = {
     ...webClient.clientConfig,
@@ -26,9 +25,12 @@ export function login(options: WebSocketConnectOptions, passwordSalt?: string): 
   const command = webClient.protobuf.controller.Command_Login.create(loginConfig);
   //the command to send to protobuf, which will then be sent to the server
   const sc = webClient.protobuf.controller.SessionCommand.create({ '.Command_Login.ext': command });
+  console.log('Sending login command:', sc);
 
   webClient.protobuf.sendSessionCommand(sc, (raw: any) => {
     const resp = raw['.Response_Login.ext'];
+
+    console.log('RESPONSE:', raw);
 
     if (raw.responseCode === webClient.protobuf.controller.Response.ResponseCode.RespOk) {
       const { buddyList, ignoreList, userInfo } = resp;
@@ -46,9 +48,7 @@ export function login(options: WebSocketConnectOptions, passwordSalt?: string): 
       updateStatus(StatusEnum.LOGGED_IN, 'Logged in.');
 
       return;
-    }
-
-    else{
+    } else {
       console.error('Login failed:', raw.responseCode, resp);
     }
 

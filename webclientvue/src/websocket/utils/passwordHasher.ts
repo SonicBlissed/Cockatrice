@@ -5,7 +5,7 @@ const HASH_ROUNDS = 1_000;
 const SALT_LENGTH = 16;
 
 export const hashPassword = (salt: string, password: string): string => {
-  let hashedPassword = salt + password;
+  let hashedPassword: any  = salt + password;
   for (let i = 0; i < HASH_ROUNDS; i++) {
     // WHY DO WE DO IT THIS WAY?
     hashedPassword = sha512(hashedPassword);
@@ -25,7 +25,7 @@ export const generateSalt = (): string => {
   return salt;
 }
 
-export const passwordSaltSupported = (serverOptions, webClient): number => {
+export const passwordSaltSupported = (serverOptions: any, webClient: any): number => {
   // Intentional use of Bitwise operator b/c of how Servatrice Enums work
   return serverOptions & webClient.protobuf.controller.Event_ServerIdentification.ServerOptions.SupportsPasswordHash;
 }

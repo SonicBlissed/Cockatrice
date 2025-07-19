@@ -33,7 +33,7 @@ export class WebSocketService {
   public connect(options: WebSocketConnectOptions, protocol: string = 'wss'): void {
     //if this window is running locally, protocol should be ws
     if (window.location.hostname === 'localhost') {
-      protocol = 'wss';
+      protocol = 'ws';
     }
 
     // deconstruct options and get the host and port values
@@ -41,7 +41,7 @@ export class WebSocketService {
     //set the ping interval to the one in clientOptions
     this.keepalive = this.webClient.clientOptions.keepalive;
     //create the actual socket connection, HARDCODED
-    this.socket = this.createWebSocket(`${protocol}://server.cockatrice.us:443/servatrice`);
+    this.socket = this.createWebSocket(`${protocol}://localhost:4748/`);
   }
 
   public disconnect(): void {
@@ -90,8 +90,6 @@ export class WebSocketService {
     };
 
     socket.onmessage = (event: MessageEvent) => {
-      //just logging the message
-      console.log('Socket Message: ', event);
       // When a message is received:
       this.message$.next(event);
       // Emit the message to any subscribers.

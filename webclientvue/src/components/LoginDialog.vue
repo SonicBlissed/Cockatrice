@@ -62,7 +62,9 @@
 import { ref } from 'vue';
 import CockatriceAvatar from 'components/CockatriceAvatar.vue';
 import { useRouter } from 'vue-router';
-import {login} from '../websocket/commands/session/login'
+import { login } from '../websocket/commands/session/login';
+import { SessionCommands } from 'src/websocket/commands';
+import { WebSocketConnectReason } from 'src/types';
 
 const router = useRouter();
 
@@ -79,15 +81,13 @@ const serverOptions = ref([
 const serverDropdown = ref('');
 function tryLogin() {
   const options = {
-    userName: "Pingweeny",
-    password: "Umeriscute123!"
-  }
+    userName: 'Pingweeny',
+    password: 'Umeriscute123!',
+  };
   try {
-    login(options);
+    SessionCommands.connect(options, WebSocketConnectReason.LOGIN);
   } catch (err) {
-    console.log("THE ERROR WE GOT FROM login.ts: ", err)
+    console.log('THE ERROR WE GOT FROM login.ts: ', err);
   }
-  
-
 }
 </script>

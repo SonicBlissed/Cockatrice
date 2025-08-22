@@ -476,16 +476,17 @@ const stopDrag = () => {
  * - Otherwise, tap all cards in stack.
  */
 const toggleTap = (card: Card) => {
-  if(!drawArea.value || !playArea.value) return;
-  const drawAreaRect = drawArea.value.getBoundingClientRect();
-  const playAreaRect = playArea.value.getBoundingClientRect();
+  if(drawArea.value && playArea.value){
+    const drawAreaRect = drawArea.value.getBoundingClientRect();
+    const playAreaRect = playArea.value.getBoundingClientRect();
 
-  // Calculate drawArea's top relative to playArea
-  const drawAreaTopRel =
-    Math.round((drawAreaRect.top - playAreaRect.top) / CARD_HEIGHT) * CARD_HEIGHT;
+    // Calculate drawArea's top relative to playArea
+    const drawAreaTopRel =
+      Math.round((drawAreaRect.top - playAreaRect.top) / CARD_HEIGHT) * CARD_HEIGHT;
 
-  // Check if this cards exists in the drawArea and prevent toggling if so
-  if(card.y >= drawAreaTopRel) return;
+    // Check if this cards exists in the drawArea and prevent toggling if so
+    if(card.y >= drawAreaTopRel) return;
+  }
 
   // Find all cards at same position
   const sameStack = cards.value.filter((c) => c.x === card.x && c.y === card.y);
@@ -558,7 +559,7 @@ const cardStyle = (card: Card, index: number): CSSProperties => ({
 .game {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 50px);
+  height: 95vh;
   background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
 }
 

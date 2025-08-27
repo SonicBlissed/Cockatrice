@@ -273,51 +273,68 @@ const cancelPeekTimer = (card: Card) => {
   card.peek = false; // Reset peek on leave
 };
 
+//returns an object containing the drawArea's top and left coords (relative to the play Area) and cards within it
+const drawAreaObject = () => {
+  /* The drawArea and playArea can be null because they were declared as a union variable with type <HTMLElement | null>.
+  Thus TypeScript requires that you include a guard to prevent errors*/
+  if (drawArea.value && playArea.value){
+
+
+    // getBoundingClientRect() returns an object containing playArea’s top, left, right, and bottom coords (measured relative to the viewport)
+    const drawAreaRect = drawArea.value.getBoundingClientRect();
+    const playAreaRect = playArea.value.getBoundingClientRect();
+
+
+    // Gets the drawArea's top-left relative to playArea (instead of viewport), then rounding to the nearest grid value
+    const drawAreaLeftRel =
+      Math.round((drawAreaRect.left - playAreaRect.left) / CARD_WIDTH) * CARD_WIDTH;
+    const drawAreaTopRel =
+      Math.round((drawAreaRect.top - playAreaRect.top) / CARD_HEIGHT) * CARD_HEIGHT;
+
+
+    // Finds the specific cards that exist in the player's drawArea
+    const cardsInDrawArea = cards.value.filter(
+      (card) =>
+        card.y === drawAreaTopRel && // same y line (same row)
+        card.x >= drawAreaLeftRel // within left bound (right bound is unlimited so it does not matter)
+    );
+
+
+    //returns the following values calculated earlier as an object
+    const drawAreaObject = {
+      top: drawAreaTopRel,
+      left: drawAreaLeftRel,
+      cards: cardsInDrawArea
+    }
+    return drawAreaObject
+  }
+  return null;
+}
+
 // The array of cards being dragged together (stack)
 const draggedStack = ref<Card[]>([]);
 
 // Adds a card after the rightmost card in the player's drawArea
 const addCard = () => {
-  /* The drawArea and playArea can be null because they were declared as a union variable with type <HTMLElement | null>.
-  Thus TypeScript requires that you include a guard to prevent errors*/
-  if (!drawArea.value || !playArea.value) return;
+  const drawAreaObj = drawAreaObject();
+  if(drawAreaObj){
+      // Finds the next x grid value right after the rightmost card.
+      const newX = drawAreaObj.left + drawAreaObj.cards.length * CARD_WIDTH;
+      const newY = drawAreaObj.top;
 
-  // getBoundingClientRect() returns an object containing playArea’s top, left, right, and bottom coords (measured relative to the viewport)
-  const drawAreaRect = drawArea.value.getBoundingClientRect();
-  const playAreaRect = playArea.value.getBoundingClientRect();
 
-  /* Getting the drawArea's top-left relative to playArea (instead of viewport) by subtraction, then rounding to the nearest grid value
-  (Should be an extremely minor difference, maybe less than 2px)*/
-  const drawAreaLeftRel =
-    Math.round((drawAreaRect.left - playAreaRect.left) / CARD_WIDTH) * CARD_WIDTH;
-  const drawAreaTopRel =
-    Math.round((drawAreaRect.top - playAreaRect.top) / CARD_HEIGHT) * CARD_HEIGHT;
+      // Temporary logic that adds a fake card with an incrementing number ID: (Card 1, Card 2, Card 3...)
+      cards.value.push({
+        id: cardId.value,
+        name: 'Card ' + cardId.value,
+        x: newX,
+        y: newY,
+        tapped: false,
+      });
+      cardId.value++;
 
-  /* Finds the specific cards that exist in the player's drawArea by checking if they’re in the same row as the draw area and if they’re
-  within the left and right bounds of the drawArea*/
-  const cardsInDrawArea = cards.value.filter(
-    (card) =>
-      card.y === drawAreaTopRel && // same y line (same row)
-      card.x >= drawAreaLeftRel &&
-      card.x < drawAreaLeftRel + drawAreaRect.width,
-  );
-
-  /* Finds the next x grid value right after the rightmost card. Done by calculating how many cards exist in the drawArea and multiplying it
-  by card width.*/
-  const newX = drawAreaLeftRel + cardsInDrawArea.length * CARD_WIDTH;
-  const newY = drawAreaTopRel;
-
-  // Temporary logic that adds a fake card with an incrementing number ID: (Card 1, Card 2, Card 3...)
-  cards.value.push({
-    id: cardId.value,
-    name: 'Card ' + cardId.value,
-    x: newX,
-    y: newY,
-    tapped: false,
-  });
-  cardId.value++;
-
-  emitCardsToServer(); // <-- sync to server
+      emitCardsToServer(); // <-- sync to server
+  }
 };
 
 // Clear the board by removing all cards and resetting cardId
@@ -331,7 +348,7 @@ const startDrag = (card: Card, e: MouseEvent) => {
   // Checks if a drag is already in play to prevent multiple drag initiations.
   if (dragging.value) return;
 
-  /* In short, this works as a boolean in other drag functions. If this value is null, we aren't dragging and the functions return early*/
+  // In short, this is like a boolean in other drag functions. If this value is null, we aren't dragging and the functions return early
   dragging.value = card;
 
   // Later when we add multi-select we will add functionality to allow dragging multiple cards. For now we drag a single card
@@ -350,38 +367,39 @@ const startDrag = (card: Card, e: MouseEvent) => {
   window.addEventListener('mouseup', stopDrag);
 };
 
+
 // Handles the mousemove event during dragging. Moves card/stack to where mouse is and snaps to nearest grid location
 const dragMove = (e: MouseEvent) => {
   // check if a drag is occurring and if the playArea exists. Return early if not.
-  if (!dragging.value || !playArea.value) return;
+  if (dragging.value && playArea.value){
+      // Get an object containing playArea’s top, left, right, and bottom coords (measured relative to the viewport)
+      const rect = playArea.value.getBoundingClientRect();
 
-  // Get an object containing playArea’s top, left, right, and bottom coords (measured relative to the viewport)
-  const rect = playArea.value.getBoundingClientRect();
+      // Calculate new X and Y by subtracting the offset to keep mouse and card coordinates the same
+      let newX = e.clientX - offset.value.x;
+      let newY = e.clientY - offset.value.y;
 
-  // Calculate new X and Y by subtracting the offset to keep mouse and card coordinates the same
-  let newX = e.clientX - offset.value.x;
-  let newY = e.clientY - offset.value.y;
+      // Snap newX and newY to the grid
+      newX = Math.round(newX / CARD_WIDTH) * CARD_WIDTH;
+      newY = Math.round(newY / CARD_HEIGHT) * CARD_HEIGHT;
 
-  // Snap newX and newY to the grid
-  newX = Math.round(newX / CARD_WIDTH) * CARD_WIDTH;
-  newY = Math.round(newY / CARD_HEIGHT) * CARD_HEIGHT;
+      // Clamp newX and newY so cards do not go out of play area
+      newX = Math.max(0, Math.min(newX, (Math.round(rect.width/CARD_WIDTH)*CARD_WIDTH) - CARD_WIDTH));
+      newY = Math.max(0, Math.min(newY, (Math.round(rect.height/CARD_HEIGHT)*CARD_HEIGHT) - CARD_HEIGHT));
 
-  // Clamp newX and newY so cards do not go out of play area
-  newX = Math.max(0, Math.min(newX, (Math.round(rect.width/CARD_WIDTH)*CARD_WIDTH) - CARD_WIDTH));
-  newY = Math.max(0, Math.min(newY, (Math.round(rect.height/CARD_HEIGHT)*CARD_HEIGHT) - CARD_HEIGHT));
+      // Calculate how far the cards moved (delta)
+      const dx = newX - dragging.value.x;
+      const dy = newY - dragging.value.y;
 
-  // Calculate how far the cards moved (delta)
-  const dx = newX - dragging.value.x;
-  const dy = newY - dragging.value.y;
+      // Move all cards in the dragged stack by the delta, this is the actual moving logic, everything else is just setting up the drag
+      for (const c of draggedStack.value) {
+        c.x += dx;
+        c.y += dy;
+      }
 
-  // Move all cards in the dragged stack by the delta, this is the actual moving logic, everything else is just setting up the drag
-  for (const c of draggedStack.value) {
-    c.x += dx;
-    c.y += dy;
+      // emit updated cards to server
+      emitCardsToServer();
   }
-
-  // emit updated cards to server
-  emitCardsToServer();
 };
 
 /* Called when dragging stops (mouse up).
@@ -389,100 +407,70 @@ const dragMove = (e: MouseEvent) => {
  * - Unstacks and untaps cards cards in the draw area and auto shifts cards to fill gaps
  * - Clears dragging state and removes event listeners. */
 const stopDrag = () => {
-  //return early if no card is being dragged or if drawArea and playArea don't exist. Needed to bypass TypeScript warning
-  if (!dragging.value || !drawArea.value || !playArea.value) return;
+  const drawAreaObj = drawAreaObject();
+  if(drawAreaObj && dragging.value){
 
-  //tracks which card(s) are being dragged
-  const draggedCards = draggedStack.value;
+    //tracks which card(s) are being dragged
+    const draggedCards = draggedStack.value;
 
-  // getBoundingClientRect() returns an object containing playArea’s top, left, right, and bottom coords (measured relative to the viewport)
-  const drawAreaRect = drawArea.value.getBoundingClientRect();
-  const playAreaRect = playArea.value.getBoundingClientRect();
-
-  // Getting the drawArea's top-left relative to playArea (instead of viewport) by subtraction, then rounding to the nearest grid value
-  const drawAreaTopRel = Math.round((drawAreaRect.top - playAreaRect.top) / CARD_HEIGHT) * CARD_HEIGHT;
-  const drawAreaLeftRel = Math.round((drawAreaRect.left - playAreaRect.left) / CARD_WIDTH) * CARD_WIDTH;
-
-  // Remove dragged cards from original cards array
-  for (const card of draggedCards) {
-    const index = cards.value.findIndex((c) => c.id === card.id);
-    if (index !== -1) {
-      cards.value.splice(index, 1);
+    // Remove dragged cards from original cards array
+    for (const card of draggedCards) {
+      const index = cards.value.findIndex((c) => c.id === card.id);
+      if (index !== -1) {
+        cards.value.splice(index, 1);
+      }
     }
+
+    // Find if there's an existing stack at the new position
+    const insertIndex = cards.value.findIndex(
+      (c) => c.x === dragging.value!.x && c.y === dragging.value!.y,
+    );
+
+    // If no stack exists, add dragged cards at the end of the cards array (just re-tracking them, no other purpose)
+    if (insertIndex === -1) {
+      cards.value.push(...draggedCards);
+    } else {
+      // Insert dragged cards before the existing stack to keep them visually below (this allows us to keep cards in bottom to top order)
+      cards.value.splice(insertIndex, 0, ...draggedCards);
+    }
+
+    // Find which cards exist in the drawArea (returned cards will not necessarily be in left to right order like we see visually)
+    const cardsInDrawArea = drawAreaObj.cards
+
+    // Sort the cards in the draw Area so that this array stores them in left to right, just like we see visually
+    cardsInDrawArea.sort((a,b)=>a.x-b.x);
+
+    /* Update all the cards in hand to each be a CARD_WIDTH's length away from the previous card. This is done so that
+    a stack of cards added to the hand won't be on top of each other. Each card is also forcibly untapped */
+    cardsInDrawArea.forEach((card, index)=>{
+      card.x = drawAreaObj.left + (index)*CARD_WIDTH
+      card.tapped = false;
+    });
+
+    // Reset drag state
+    dragging.value = null;
+    draggedStack.value = [];
+
+    // Remove event listeners
+    window.removeEventListener('mousemove', dragMove);
+    window.removeEventListener('mouseup', stopDrag);
+
+    //emit updated cards to server
+    emitCardsToServer();
   }
-
-  // Find if there's an existing stack at the new position
-  const insertIndex = cards.value.findIndex(
-    (c) => c.x === dragging.value!.x && c.y === dragging.value!.y,
-  );
-
-  // If no stack exists, add dragged cards at the end of the cards array (just re-tracking them, no other purpose)
-  if (insertIndex === -1) {
-    cards.value.push(...draggedCards);
-  } else {
-    // Insert dragged cards before the existing stack to keep them visually below (this allows us to keep cards in bottom to top order)
-    cards.value.splice(insertIndex, 0, ...draggedCards);
-  }
-
-  // Find which cards exist in the drawArea (returned cards will not necessarily be in left to right order like we see visually)
-  const cardsInDrawArea = cards.value.filter(
-    (card) =>
-      card.y === drawAreaTopRel && // same y line (same row)
-      card.x >= drawAreaLeftRel &&
-      card.x < drawAreaLeftRel + drawAreaRect.width,
-  );
-
-  // Sort the cards in the draw Area so that this array stores them in left to right, just like we see visually
-  cardsInDrawArea.sort((a,b)=>a.x-b.x);
-
-  /* Update all the cards in hand to each be a CARD_WIDTH's length away from the previous card. This is done so that
-  a stack of cards added to the hand won't be on top of each other. Each card is also forcibly untapped */
-  cardsInDrawArea.forEach((card, index)=>{
-    card.x = drawAreaLeftRel + (index)*CARD_WIDTH
-    card.tapped = false;
-  });
-
-  // Reset drag state
-  dragging.value = null;
-  draggedStack.value = [];
-
-  // Remove event listeners
-  window.removeEventListener('mousemove', dragMove);
-  window.removeEventListener('mouseup', stopDrag);
-
-  //emit updated cards to server
-  emitCardsToServer();
 };
 
 // Toggles the tapped (rotated) state for all selected cards. Won't work if the card is in the draw area
 const toggleTap = (card: Card) => {
+  // Check if this card exists in the drawArea and prevent toggling by returning early if so
+  const drawAreaObj = drawAreaObject()
+  if(drawAreaObj) if(card.y >= drawAreaObj.top) return
 
-  /* Check if the card exists in the drawArea. The drawArea and playArea can be null because they were declared as a union variable with
-  type <HTMLElement | null>. Thus TypeScript requires that you include a guard to prevent errors*/
-  if(drawArea.value && playArea.value){
-
-    // getBoundingClientRect() returns an object containing playArea’s top, left, right, and bottom coords (measured relative to the viewport)
-    const drawAreaRect = drawArea.value.getBoundingClientRect();
-    const playAreaRect = playArea.value.getBoundingClientRect();
-
-    // Getting the drawArea's top-left relative to playArea (instead of viewport) by subtraction, then rounding to the nearest grid value
-    const drawAreaTopRel =
-      Math.round((drawAreaRect.top - playAreaRect.top) / CARD_HEIGHT) * CARD_HEIGHT;
-
-    // Check if this cards exists in the drawArea and prevent toggling by returning early if so
-    if(card.y >= drawAreaTopRel) return;
-  }
-
-  // Find all cards at same position
-  const sameStack = cards.value.filter((c) => c.x === card.x && c.y === card.y);
+  // **Later when multi-select is added we will add the ability to group-tap. Not necessary now
 
   // If tapped, untap; if untapped, tap
   const shouldTap = !card.tapped;
-
-  // Set tapped state for entire stack
-  for (const c of sameStack) {
-    c.tapped = shouldTap;
-  }
+  card.tapped = shouldTap;
 
   // emit all tapped cards to server
   emitCardsToServer();

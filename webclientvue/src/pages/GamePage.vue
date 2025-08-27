@@ -333,7 +333,6 @@ const addCard = () => {
       });
       cardId.value++;
 
-
       emitCardsToServer(); // <-- sync to server
   }
 };
@@ -463,11 +462,9 @@ const stopDrag = () => {
 
 // Toggles the tapped (rotated) state for all selected cards. Won't work if the card is in the draw area
 const toggleTap = (card: Card) => {
-
   // Check if this card exists in the drawArea and prevent toggling by returning early if so
   const drawAreaObj = drawAreaObject()
   if(drawAreaObj) if(card.y >= drawAreaObj.top) return
-
 
   // **Later when multi-select is added we will add the ability to group-tap. Not necessary now
 
@@ -478,7 +475,6 @@ const toggleTap = (card: Card) => {
   // emit all tapped cards to server
   emitCardsToServer();
 };
-
 
 //Groups cards into stacks by their (x,y) position. Returns an array of stacks, each stack is an array of cards.
 const cardStacks = computed(() => {
